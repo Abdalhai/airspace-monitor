@@ -1,0 +1,64 @@
+# Runtime configuration. Every value is overridable from the command line;
+# this file supplies defaults, the CLI wins.
+#
+# Merged from Phase 1's config.yaml with the Tier 3 reconstruction block added.
+# The original is kept at config/phase1_original.yaml for reference.
+
+source:
+  type: file              # file | webcam | rtsp | ip_http
+  path: "data/test.mp4"
+  pace_realtime: true     # sleep to match native fps, simulating a live feed
+  reconnect_attempts: 3   # live sources only
+  reconnect_delay_s: 1.0
+  native_fps: null        # null = read from the container
+
+  # Android "IP Webcam" app:
+  #   type: ip_http
+  #   url: "http://192.168.1.23:8080/video"
+
+standardization:
+  target_width: 960
+  target_height: 540
+  preserve_aspect: true   # FIX defect 6. false reproduces the old anamorphic
+                          # squeeze and invalidates every K -- do not set false
+                          # unless the output is display-only.
+  brightness_method: "none"   # "clahe" | "hist_eq" | "none"
+                          # CHANGED from clahe: measured at 43% of the frame
+                          # budget, and MOG2 already adapts to lighting. Enable
+                          # only if an A/B test against recall justifies it.
+  clahe_clip_limit: 2.0
+  clahe_tile_grid: 8
+
+background_subtraction:
+  history: 500
+  var_threshold: 16.0
+  detect_shadows: false   # true roughly doubles per-pixel cost
+  bg_sub_scale: 1.0       # 0.5 to downscale before bg-sub if CPU-bound
+  morph_kernel_size: 3
+  min_blob_area: 25       # pixels at standardized resolution.
+                          # NOTE: dataset 5's drone spans a >20x apparent size
+                          # range (5.3 m to 124 m from camera). A single
+                          # threshold cannot serve both ends.
+
+tracking:
+  max_match_distance: 60.0
+  max_missed_frames: 10
+  history_len: 15
+  direction_lookback: 5   # FIX defect 1: this now actually reaches the tracker
+  min_hits: 3             # FIX defect 4: observations before a track is reported
+
+angular:
+  smoothing: 5
+  calibration: null       # path to calibration JSON; without it, px/s not deg/s
+
+reconstruction:
+  window_s: 0.5
+  voxel_size_m: 1.5       # matched to calibration error, not made finer
+  samples_per_ray: 3
+  percentile: 99.8
+  ray_sigma_deg: 7.0      # the MEASURED orientation error, not a tuning knob
+  min_cameras: 3          # 2 cameras reconstruct underground 13.4% of the time
+
+output:
+  show_window: true
+  write_video_path: null
