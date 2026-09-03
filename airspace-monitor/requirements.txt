@@ -1,7 +1,0 @@
-# Pinned to versions that install from wheels on a fresh Windows box with
-# `pip install -r requirements.txt`. No compiler, no C++ toolchain required.
-numpy>=1.24,<3.0
-scipy>=1.10,<2.0
-opencv-python>=4.8,<5.0
-matplotlib>=3.7,<4.0
-PyYAML>=6.0,<7.0
