@@ -1,0 +1,52 @@
+# Phase 1 MVP config — capture + standardization + background subtraction + direction verification.
+# A separate, more advanced multi-camera/voxel config (per-camera position/yaw/pitch/roll/FOV,
+# station distance apart, sync offset) will be introduced later for the cross-camera phase.
+# Not needed yet — kept structurally simple and self-contained for this phase.
+
+source:
+  # type: file | webcam | rtsp | ip_http
+  type: file
+  path: "test_videos/sample.mp4"
+  pace_realtime: true     # true = sleep to match native FPS (simulate a live feed)
+                            # false = read as fast as possible (quick iteration on file input)
+
+  # --- examples for the other source types (swap in as needed) ---
+  # Webcam:
+  #   type: webcam
+  #   index: 0
+  #
+  # Android "IP Webcam" app (its default MJPEG endpoint):
+  #   type: ip_http
+  #   url: "http://192.168.1.23:8080/video"
+  #
+  # RTSP:
+  #   type: rtsp
+  #   url: "rtsp://user:pass@192.168.1.23:554/stream1"
+
+  reconnect_attempts: 3     # live sources only
+  reconnect_delay_s: 1.0    # live sources only
+
+standardization:
+  target_width: 960
+  target_height: 540
+  brightness_method: "clahe"   # "clahe" | "hist_eq" | "none" — tradeoff explained in standardization.py
+  clahe_clip_limit: 2.0
+  clahe_tile_grid: 8
+
+background_subtraction:
+  history: 500
+  var_threshold: 16.0
+  detect_shadows: false      # true roughly doubles per-pixel cost, see motion_detection.py
+  bg_sub_scale: 1.0          # e.g. 0.5 to downscale before bg-sub if CPU-bound; 1.0 = off
+  morph_kernel_size: 3
+  min_blob_area: 25          # in pixels, at standardized resolution
+
+tracking:
+  max_match_distance: 60.0   # pixels; max centroid jump to still count as the same object
+  max_missed_frames: 10      # frames a track can go unmatched before being dropped
+  history_len: 15            # centroids retained per track
+  direction_lookback: 5      # centroids used to compute the displayed direction vector
+
+output:
+  show_window: true
+  write_video_path: null     # e.g. "output/annotated.mp4" to also/instead save to disk
